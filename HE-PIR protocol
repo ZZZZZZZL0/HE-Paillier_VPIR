@@ -1,0 +1,64 @@
+this file works in Magma, an algebraic computation software which is developed by C
+
+
+//______________________________Preparation___________________________
+p1:=NextPrime(2^1535);	p2:=NextPrime(p1); 
+//	p1:=541;   p2:=613;         // just a simple example
+N:=p1*p2;		phin:=(p1-1)*(p2-1);		
+
+g:=N+1;		rec:= [Modinv(phin,N), -1];
+//______________________________________________________________________
+
+n:=2^13;	X:=[ 2^256-1: i in [1..n] ];	
+// X:=[0,1,0,1,0,1,0,1,0];    // just a simple example
+query_index:=6; 
+
+
+
+
+
+
+
+
+
+
+function HEPaillier(X, query_index, N, phin, finpow) 
+//______________________________________________________________________		
+ell:=Ceiling(Sqrt(#X));	D:=[ ];
+X:=X cat [0: i in [1..ell^2-#X]];
+for i:=1 to ell do
+      D[i]:=X[ell*(i-1)+1..ell*i];
+end for;
+//_______________________________Query______________________________  
+u:= query_index div ell;	v:= query_index mod ell;
+if v eq 0 then
+     v:=ell;
+else 
+     u:=u+1;
+end if;
+
+quy:=[ ];	j:=0;	r:=[Random(N-1)+1:  i in [1..ell] ];
+	t:=Cputime();
+for rj in r do
+      j:=j+1;      quy[j]:= Modexp(rj,N,N^2); 
+end for;
+quy[v]:= g*Modexp(r[v],N,N^2) mod N^2;
+tq:=Cputime(t);	//rk:=phin;
+//_______________________________Answer_____________________________
+ans:=[ ];
+for s:=1 to ell do
+      ans[s]:= 1;
+      for i:=1 to ell do
+            ans[s]:= ans[s]*Modexp(quy[i],D[s,i], N^2)  mod N^2; 
+      end for;    
+end for;
+ta:=Cputime(t)-tq;
+//___________________________Reconstruction________________________
+temp:= Modexp(ans[u],phin,N^2)-1;	
+rec[2]:= (temp div N)*rec[1];	dk:= rec[2] mod N;
+tr:=Cputime(t)-ta-tq;	delete t;
+
+return <dk, ta, tr+tq>;
+end function;
+
+
